@@ -22,7 +22,7 @@
 
 ### 1.2 Deploy to Railway
 1. Go to [Railway.app](https://railway.app)
-2. Connect your GitHub repository
+2. Connect your GitHub repository: https://github.com/nug31/mitragarage.git
 3. Select the `backend` folder as the root directory
 4. Railway will automatically detect it's a Node.js project
 5. Set environment variables in Railway dashboard:
@@ -49,7 +49,7 @@
 
 ### 2.2 Deploy to Netlify
 1. Go to [Netlify.com](https://netlify.com)
-2. Connect your Git repository
+2. Connect your Git repository: https://github.com/nug31/mitragarage.git
 3. Set build settings:
    - Build command: `npm run build`
    - Publish directory: `dist`

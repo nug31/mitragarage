@@ -1,0 +1,30 @@
+LANGKAH PUSH KE GITHUB:
+
+1. Buat repository baru di GitHub:
+   - Nama: mitra-garage
+   - Deskripsi: Workshop Management System - Complete solution for garage operations
+   - Public repository
+   - JANGAN centang "Add a README file"
+
+2. Copy URL repository yang dibuat (contoh: https://github.com/username/mitra-garage.git)
+
+3. Jalankan command berikut di terminal (ganti USERNAME dengan username GitHub Anda):
+
+git remote add origin https://github.com/USERNAME/mitra-garage.git
+git branch -M main
+git push -u origin main
+
+4. Setelah berhasil push, repository akan tersedia di GitHub dan siap untuk deployment!
+
+CONTOH LENGKAP:
+Jika username GitHub Anda adalah "johndoe", maka command-nya:
+
+git remote add origin https://github.com/johndoe/mitra-garage.git
+git branch -M main
+git push -u origin main
+
+STATUS SAAT INI:
+✅ Git repository sudah diinisialisasi
+✅ Semua file sudah di-commit (75 files, 19,737 lines)
+✅ Siap untuk push ke GitHub
+✅ Konfigurasi deployment sudah lengkap
