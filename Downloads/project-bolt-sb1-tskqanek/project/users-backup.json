@@ -1,0 +1,34 @@
+[
+  {
+    "username": "admin",
+    "email": "admin@mitragarage.com",
+    "password": "YWRtaW4xMjM=",
+    "full_name": "Administrator",
+    "role": "admin",
+    "status": "active"
+  },
+  {
+    "username": "owner",
+    "email": "owner@mitragarage.com",
+    "password": "b3duZXIxMjM=",
+    "full_name": "Owner",
+    "role": "owner",
+    "status": "active"
+  },
+  {
+    "username": "customer_new",
+    "email": "customer_new@mitragarage.com",
+    "password": "Y3VzdG9tZXIxMjM=",
+    "full_name": "Customer New",
+    "role": "customer",
+    "status": "active"
+  },
+  {
+    "username": "customer_fixed",
+    "email": "customer_fixed@mitragarage.com",
+    "password": "Y3VzdG9tZXIxMjM=",
+    "full_name": "Customer Fixed",
+    "role": "customer",
+    "status": "active"
+  }
+]

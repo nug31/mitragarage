@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check localStorage Bookings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .booking-item {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .date-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .fix-button {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .fix-button:hover {
+            background: #218838;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 localStorage Bookings Debug</h1>
+        
+        <div class="section">
+            <h3>📅 Current Date Information</h3>
+            <div id="dateInfo"></div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 localStorage Bookings</h3>
+            <div id="bookingsInfo"></div>
+        </div>
+        
+        <div class="section">
+            <h3>🔧 Quick Fixes</h3>
+            <button class="fix-button" onclick="updateBookingDatesToToday()">
+                📅 Update All Booking Dates to Today
+            </button>
+            <button class="fix-button" onclick="addSampleBookingsForToday()">
+                ➕ Add Sample Bookings for Today
+            </button>
+            <button class="fix-button" onclick="clearAllBookings()">
+                🗑️ Clear All Bookings
+            </button>
+            <div id="fixResults"></div>
+        </div>
+        
+        <div class="section">
+            <h3>📊 Dashboard Filter Test</h3>
+            <div id="filterTest"></div>
+        </div>
+    </div>
+
+    <script>
+        function getCurrentDateInfo() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const todayLocal = now.toLocaleDateString('en-CA');
+            
+            return {
+                now: now.toISOString(),
+                today: today,
+                todayLocal: todayLocal,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            };
+        }
+        
+        function displayDateInfo() {
+            const dateInfo = getCurrentDateInfo();
+            document.getElementById('dateInfo').innerHTML = `
+                <div class="date-info">
+                    <strong>Current DateTime:</strong> ${dateInfo.now}<br>
+                    <strong>Today (ISO):</strong> ${dateInfo.today}<br>
+                    <strong>Today (Local):</strong> ${dateInfo.todayLocal}<br>
+                    <strong>Timezone:</strong> ${dateInfo.timezone}
+                </div>
+            `;
+        }
+        
+        function displayBookingsInfo() {
+            const bookingsData = localStorage.getItem('bookings');
+            const bookingsInfoDiv = document.getElementById('bookingsInfo');
+            
+            if (!bookingsData) {
+                bookingsInfoDiv.innerHTML = '<p class="error">❌ No bookings found in localStorage</p>';
+                return;
+            }
+            
+            try {
+                const bookings = JSON.parse(bookingsData);
+                const dateInfo = getCurrentDateInfo();
+                
+                let html = `<p class="success">✅ Found ${bookings.length} bookings in localStorage</p>`;
+                
+                bookings.forEach((booking, index) => {
+                    const bookingDate = booking.booking_date || booking.bookingDate;
+                    const isToday = bookingDate === dateInfo.today;
+                    
+                    html += `
+                        <div class="booking-item">
+                            <strong>Booking ${index + 1}:</strong><br>
+                            <strong>Customer:</strong> ${booking.customer_name || booking.customerName}<br>
+                            <strong>Service:</strong> ${booking.service_type || booking.serviceType}<br>
+                            <strong>Date:</strong> ${bookingDate} ${isToday ? '✅ (Today)' : '❌ (Not Today)'}<br>
+                            <strong>Time:</strong> ${booking.booking_time || booking.bookingTime}<br>
+                            <strong>Status:</strong> ${booking.status}
+                        </div>
+                    `;
+                });
+                
+                bookingsInfoDiv.innerHTML = html;
+                
+            } catch (error) {
+                bookingsInfoDiv.innerHTML = `<p class="error">❌ Error parsing bookings: ${error.message}</p>`;
+            }
+        }
+        
+        function testDashboardFilter() {
+            const bookingsData = localStorage.getItem('bookings');
+            const filterTestDiv = document.getElementById('filterTest');
+            
+            if (!bookingsData) {
+                filterTestDiv.innerHTML = '<p class="error">❌ No bookings to test</p>';
+                return;
+            }
+            
+            try {
+                const bookings = JSON.parse(bookingsData);
+                const dateInfo = getCurrentDateInfo();
+                
+                // Test the exact filter used in Dashboard
+                const todayBookings = bookings.filter((booking) =>
+                    (booking.booking_date || booking.bookingDate) === dateInfo.today
+                );
+                
+                let html = `
+                    <div class="date-info">
+                        <strong>Filter Test Results:</strong><br>
+                        <strong>Total Bookings:</strong> ${bookings.length}<br>
+                        <strong>Today's Bookings:</strong> ${todayBookings.length}<br>
+                        <strong>Filter Date:</strong> ${dateInfo.today}
+                    </div>
+                `;
+                
+                if (todayBookings.length > 0) {
+                    html += '<h4>Today\'s Bookings:</h4>';
+                    todayBookings.forEach((booking, index) => {
+                        html += `
+                            <div class="booking-item">
+                                ${booking.customer_name || booking.customerName} - 
+                                ${booking.service_type || booking.serviceType}
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p class="error">❌ No bookings found for today</p>';
+                }
+                
+                filterTestDiv.innerHTML = html;
+                
+            } catch (error) {
+                filterTestDiv.innerHTML = `<p class="error">❌ Error testing filter: ${error.message}</p>`;
+            }
+        }
+        
+        function updateBookingDatesToToday() {
+            const bookingsData = localStorage.getItem('bookings');
+            const resultsDiv = document.getElementById('fixResults');
+            
+            if (!bookingsData) {
+                resultsDiv.innerHTML = '<p class="error">❌ No bookings to update</p>';
+                return;
+            }
+            
+            try {
+                const bookings = JSON.parse(bookingsData);
+                const today = getCurrentDateInfo().today;
+                
+                bookings.forEach(booking => {
+                    if (booking.booking_date) {
+                        booking.booking_date = today;
+                    }
+                    if (booking.bookingDate) {
+                        booking.bookingDate = today;
+                    }
+                });
+                
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                resultsDiv.innerHTML = `<p class="success">✅ Updated ${bookings.length} bookings to today (${today})</p>`;
+                
+                // Refresh displays
+                displayBookingsInfo();
+                testDashboardFilter();
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<p class="error">❌ Error updating bookings: ${error.message}</p>`;
+            }
+        }
+        
+        function addSampleBookingsForToday() {
+            const today = getCurrentDateInfo().today;
+            const sampleBookings = [
+                {
+                    id: Date.now(),
+                    customer_name: 'Test Customer 1',
+                    customerName: 'Test Customer 1',
+                    vehicle_number: 'B 1234 TEST',
+                    vehicleNumber: 'B 1234 TEST',
+                    service_type: 'Ganti Oli',
+                    serviceType: 'Ganti Oli',
+                    booking_date: today,
+                    bookingDate: today,
+                    booking_time: '09:00',
+                    bookingTime: '09:00',
+                    status: 'Dijadwalkan'
+                },
+                {
+                    id: Date.now() + 1,
+                    customer_name: 'Test Customer 2',
+                    customerName: 'Test Customer 2',
+                    vehicle_number: 'B 5678 TEST',
+                    vehicleNumber: 'B 5678 TEST',
+                    service_type: 'Service Rem',
+                    serviceType: 'Service Rem',
+                    booking_date: today,
+                    bookingDate: today,
+                    booking_time: '10:30',
+                    bookingTime: '10:30',
+                    status: 'Dijadwalkan'
+                }
+            ];
+            
+            const existingBookings = localStorage.getItem('bookings');
+            let allBookings = [];
+            
+            if (existingBookings) {
+                try {
+                    allBookings = JSON.parse(existingBookings);
+                } catch (error) {
+                    console.error('Error parsing existing bookings:', error);
+                }
+            }
+            
+            allBookings.push(...sampleBookings);
+            localStorage.setItem('bookings', JSON.stringify(allBookings));
+            
+            document.getElementById('fixResults').innerHTML = 
+                `<p class="success">✅ Added ${sampleBookings.length} sample bookings for today</p>`;
+            
+            // Refresh displays
+            displayBookingsInfo();
+            testDashboardFilter();
+        }
+        
+        function clearAllBookings() {
+            localStorage.removeItem('bookings');
+            document.getElementById('fixResults').innerHTML = 
+                '<p class="success">✅ All bookings cleared from localStorage</p>';
+            
+            // Refresh displays
+            displayBookingsInfo();
+            testDashboardFilter();
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            displayDateInfo();
+            displayBookingsInfo();
+            testDashboardFilter();
+        });
+    </script>
+</body>
+</html>

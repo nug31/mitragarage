@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - Mitra Garage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .login-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .quick-login {
+            background: #28a745;
+        }
+        .quick-login:hover {
+            background: #1e7e34;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .user-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test Login - Mitra Garage</h1>
+        
+        <div class="info result">
+            <strong>Available Test Accounts:</strong><br>
+            • <strong>admin</strong> / admin123 (Administrator)<br>
+            • <strong>owner</strong> / owner123 (Owner)<br>
+            • <strong>customer</strong> / customer123 (Customer)
+        </div>
+        
+        <div class="login-form">
+            <h3>Manual Login Test</h3>
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Enter password">
+            </div>
+            <button onclick="testLogin()">🔐 Test Login</button>
+            
+            <h4>Quick Login Tests:</h4>
+            <button class="quick-login" onclick="quickLogin('admin', 'admin123')">👨‍💼 Login as Admin</button>
+            <button class="quick-login" onclick="quickLogin('owner', 'owner123')">👑 Login as Owner</button>
+            <button class="quick-login" onclick="quickLogin('customer', 'customer123')">👤 Login as Customer</button>
+        </div>
+        
+        <div id="result"></div>
+        
+        <div class="login-form">
+            <h3>Database Status</h3>
+            <button onclick="checkUsers()">👥 Check Users</button>
+            <button onclick="checkHealth()">🏥 Check Server Health</button>
+            <button onclick="checkDatabase()">🔌 Check Database</button>
+            <div id="statusResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3003';
+        
+        async function makeRequest(method, endpoint, data = null) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const result = await response.json();
+                
+                return {
+                    status: response.status,
+                    data: result
+                };
+            } catch (error) {
+                return {
+                    status: 0,
+                    error: error.message
+                };
+            }
+        }
+        
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showResult('Please enter both username and password', 'error');
+                return;
+            }
+            
+            await performLogin(username, password);
+        }
+        
+        async function quickLogin(username, password) {
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+            await performLogin(username, password);
+        }
+        
+        async function performLogin(username, password) {
+            showResult('🔄 Testing login...', 'info');
+            
+            const result = await makeRequest('POST', '/api/auth/login', {
+                username: username,
+                password: password
+            });
+            
+            if (result.status === 200) {
+                const user = result.data.user;
+                const token = result.data.token;
+                
+                let html = `
+                    <div class="success result">
+                        <h4>✅ Login Successful!</h4>
+                        <div class="user-info">
+                            <strong>User Information:</strong><br>
+                            • ID: ${user.id}<br>
+                            • Username: ${user.username}<br>
+                            • Full Name: ${user.full_name}<br>
+                            • Email: ${user.email}<br>
+                            • Role: ${user.role}<br>
+                            • Status: ${user.status}
+                        </div>
+                        <strong>Token:</strong> ${token ? '✅ Generated' : '❌ Missing'}<br>
+                        <details>
+                            <summary>View Full Response</summary>
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+                
+                document.getElementById('result').innerHTML = html;
+                
+                // Store token for future requests
+                localStorage.setItem('authToken', token);
+                
+            } else {
+                showResult(`❌ Login Failed (${result.status}): ${result.data?.error || result.error || 'Unknown error'}`, 'error');
+            }
+        }
+        
+        async function checkUsers() {
+            showStatus('🔄 Checking users...', 'info');
+            
+            const result = await makeRequest('GET', '/api/auth/users');
+            
+            if (result.status === 200) {
+                let html = `
+                    <div class="success result">
+                        <h4>✅ Found ${result.data.length} Users:</h4>
+                `;
+                
+                result.data.forEach((user, index) => {
+                    html += `
+                        <div class="user-info">
+                            <strong>${index + 1}. ${user.username}</strong> (${user.role})<br>
+                            • Name: ${user.full_name}<br>
+                            • Email: ${user.email}<br>
+                            • Status: ${user.status}<br>
+                            • Created: ${new Date(user.created_at).toLocaleString()}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                document.getElementById('statusResult').innerHTML = html;
+                
+            } else {
+                showStatus(`❌ Failed to get users (${result.status}): ${result.data?.error || result.error}`, 'error');
+            }
+        }
+        
+        async function checkHealth() {
+            showStatus('🔄 Checking server health...', 'info');
+            
+            const result = await makeRequest('GET', '/health');
+            
+            if (result.status === 200) {
+                showStatus(`✅ Server Health: ${result.data.status} - ${result.data.service} v${result.data.version}`, 'success');
+            } else {
+                showStatus(`❌ Server health check failed (${result.status})`, 'error');
+            }
+        }
+        
+        async function checkDatabase() {
+            showStatus('🔄 Checking database connection...', 'info');
+            
+            const result = await makeRequest('GET', '/api/database/test');
+            
+            if (result.status === 200) {
+                showStatus(`✅ Database: ${result.data.message}`, 'success');
+            } else {
+                showStatus(`❌ Database check failed (${result.status}): ${result.data?.error || result.error}`, 'error');
+            }
+        }
+        
+        function showResult(message, type) {
+            document.getElementById('result').innerHTML = `<div class="${type} result">${message}</div>`;
+        }
+        
+        function showStatus(message, type) {
+            document.getElementById('statusResult').innerHTML = `<div class="${type} result">${message}</div>`;
+        }
+        
+        // Auto-check on page load
+        window.addEventListener('load', function() {
+            checkHealth();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "owner": {
+    "username": "owner",
+    "password": "owner123",
+    "email": "owner@mitragarage.com",
+    "full_name": "Bengkel Owner",
+    "role": "owner",
+    "menuItems": 8,
+    "specialFeatures": [
+      "User Management",
+      "Reports & Analytics"
+    ]
+  },
+  "admin": {
+    "username": "admin",
+    "password": "admin123",
+    "email": "admin@mitragarage.com",
+    "full_name": "Administrator",
+    "role": "admin",
+    "menuItems": 6,
+    "specialFeatures": []
+  },
+  "manager": {
+    "username": "manager",
+    "password": "manager123",
+    "email": "manager@mitragarage.com",
+    "full_name": "Manager Bengkel",
+    "role": "admin",
+    "menuItems": 6,
+    "specialFeatures": []
+  },
+  "supervisor": {
+    "username": "supervisor",
+    "password": "supervisor123",
+    "email": "supervisor@mitragarage.com",
+    "full_name": "Supervisor Bengkel",
+    "role": "admin",
+    "menuItems": 6,
+    "specialFeatures": []
+  }
+}

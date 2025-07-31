@@ -1,0 +1,46 @@
+{
+  "adminPanelTabs": [
+    {
+      "id": "overview",
+      "label": "Overview",
+      "description": "System statistics and data management"
+    },
+    {
+      "id": "requests",
+      "label": "Approval Stok",
+      "description": "Stock request approval workflow"
+    },
+    {
+      "id": "settings",
+      "label": "Pengaturan",
+      "description": "System configuration settings"
+    }
+  ],
+  "removedFeatures": [
+    "Kelola User tab",
+    "User management table",
+    "Add user button",
+    "User data array",
+    "getRoleColor function"
+  ],
+  "accessControl": {
+    "owner": {
+      "adminPanel": true,
+      "userManagement": true,
+      "reportsAnalytics": true,
+      "tabs": 3
+    },
+    "admin": {
+      "adminPanel": true,
+      "userManagement": false,
+      "reportsAnalytics": false,
+      "tabs": 3
+    },
+    "staff": {
+      "adminPanel": false,
+      "userManagement": false,
+      "reportsAnalytics": false,
+      "tabs": 0
+    }
+  }
+}

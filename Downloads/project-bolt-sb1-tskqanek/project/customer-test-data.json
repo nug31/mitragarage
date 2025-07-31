@@ -1,0 +1,115 @@
+{
+  "customerEmail": "customer1@gmail.com",
+  "bookings": [
+    {
+      "id": 1752974910158,
+      "customer_name": "John Doe",
+      "vehicle_info": "Toyota Avanza 2020",
+      "service_type": "Ganti Oli",
+      "booking_date": "2025-07-20",
+      "status": "Selesai",
+      "estimated_cost": 150000,
+      "notes": "Service rutin ganti oli mesin",
+      "phone": "081234567890",
+      "email": "customer1@gmail.com"
+    },
+    {
+      "id": 1753057710159,
+      "customer_name": "John Doe",
+      "vehicle_info": "Toyota Avanza 2020",
+      "service_type": "Tune Up",
+      "booking_date": "2025-07-21",
+      "status": "Sedang Dikerjakan",
+      "estimated_cost": 300000,
+      "notes": "Tune up lengkap dengan penggantian filter",
+      "phone": "081234567890",
+      "email": "customer1@gmail.com"
+    },
+    {
+      "id": 1753061310159,
+      "customer_name": "John Doe",
+      "vehicle_info": "Toyota Avanza 2020",
+      "service_type": "Service AC",
+      "booking_date": "2025-07-22",
+      "status": "Dijadwalkan",
+      "estimated_cost": 200000,
+      "notes": "Service AC dan pembersihan evaporator",
+      "phone": "081234567890",
+      "email": "customer1@gmail.com"
+    }
+  ],
+  "orders": [
+    {
+      "id": 1752888510159,
+      "order_date": "2025-07-19T01:28:30.159Z",
+      "status": "Delivered",
+      "total_amount": 225000,
+      "items": [
+        {
+          "id": 1,
+          "name": "Oli Mesin Mobil",
+          "price": 75000,
+          "quantity": 2,
+          "category": "Oli Mesin"
+        },
+        {
+          "id": 2,
+          "name": "Filter Udara",
+          "price": 45000,
+          "quantity": 1,
+          "category": "Filter"
+        },
+        {
+          "id": 3,
+          "name": "Busi NGK",
+          "price": 30000,
+          "quantity": 1,
+          "category": "Spare Part"
+        }
+      ],
+      "customer_name": "John Doe",
+      "customer_email": "customer1@gmail.com",
+      "notes": "Order placed from Browse Items"
+    },
+    {
+      "id": 1752974910159,
+      "order_date": "2025-07-20T01:28:30.159Z",
+      "status": "Shipped",
+      "total_amount": 650000,
+      "items": [
+        {
+          "id": 4,
+          "name": "Ban Mobil R15",
+          "price": 650000,
+          "quantity": 1,
+          "category": "Ban"
+        }
+      ],
+      "customer_name": "John Doe",
+      "customer_email": "customer1@gmail.com",
+      "notes": "Order placed from Browse Items"
+    },
+    {
+      "id": 1753057710160,
+      "order_date": "2025-07-21T00:28:30.160Z",
+      "status": "Processing",
+      "total_amount": 120000,
+      "items": [
+        {
+          "id": 5,
+          "name": "Wiper Blade",
+          "price": 60000,
+          "quantity": 2,
+          "category": "Aksesoris"
+        }
+      ],
+      "customer_name": "John Doe",
+      "customer_email": "customer1@gmail.com",
+      "notes": "Order placed from Browse Items"
+    }
+  ],
+  "localStorageKeys": [
+    "bookings_customer1@gmail.com",
+    "orders_customer1@gmail.com"
+  ]
+}

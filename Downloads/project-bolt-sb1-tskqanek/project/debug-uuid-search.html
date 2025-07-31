@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UUID Debug Search - 38be73b1-540a-49e7-a079-2ed3adadc132</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .uuid-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 16px;
+            word-break: break-all;
+            border-left: 4px solid #007bff;
+        }
+        .result {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .search-button {
+            background: #28a745;
+        }
+        .search-button:hover {
+            background: #1e7e34;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .storage-item {
+            background: #e7f3ff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 UUID Debug Search</h1>
+        
+        <div class="section">
+            <h3>🎯 Target UUID</h3>
+            <div class="uuid-display">
+                38be73b1-540a-49e7-a079-2ed3adadc132
+            </div>
+            <div class="info result">
+                <strong>UUID Analysis:</strong><br>
+                • Format: Valid UUID v4 (random)<br>
+                • Version: 4 (random generation)<br>
+                • Variant: RFC 4122 compliant<br>
+                • Length: 36 characters<br>
+                • Possible timestamp: March 2, 2000 13:59:13 UTC
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>🌐 Browser Storage Search</h3>
+            <button class="search-button" onclick="searchBrowserStorage()">🔍 Search All Browser Storage</button>
+            <button onclick="clearResults('storageResults')">🗑️ Clear Results</button>
+            <div id="storageResults"></div>
+        </div>
+        
+        <div class="section">
+            <h3>🗄️ Database Search</h3>
+            <button class="search-button" onclick="searchDatabase()">🔍 Search Database</button>
+            <button onclick="clearResults('databaseResults')">🗑️ Clear Results</button>
+            <div id="databaseResults"></div>
+        </div>
+        
+        <div class="section">
+            <h3>🌐 Network Requests Search</h3>
+            <button class="search-button" onclick="monitorNetworkRequests()">📡 Monitor Network</button>
+            <button onclick="clearResults('networkResults')">🗑️ Clear Results</button>
+            <div id="networkResults"></div>
+        </div>
+        
+        <div class="section">
+            <h3>🔧 Manual Investigation</h3>
+            <div class="info result">
+                <strong>Manual Steps to Find This UUID:</strong><br><br>
+                
+                <strong>1. Browser Developer Tools:</strong><br>
+                • Open DevTools (F12)<br>
+                • Go to Application tab → Storage<br>
+                • Check localStorage, sessionStorage, IndexedDB<br>
+                • Search for: <code>38be73b1-540a-49e7-a079-2ed3adadc132</code><br><br>
+                
+                <strong>2. Network Tab:</strong><br>
+                • Open DevTools → Network tab<br>
+                • Refresh page or perform actions<br>
+                • Search in request/response headers and bodies<br><br>
+                
+                <strong>3. Console Search:</strong><br>
+                • Open DevTools → Console<br>
+                • Run: <code>JSON.stringify(localStorage)</code><br>
+                • Run: <code>JSON.stringify(sessionStorage)</code><br><br>
+                
+                <strong>4. Database Direct Query:</strong><br>
+                • Connect to Railway MySQL<br>
+                • Run queries in all tables<br>
+                • Check for UUID in any column
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const targetUUID = '38be73b1-540a-49e7-a079-2ed3adadc132';
+        const API_BASE = 'http://localhost:3003';
+        
+        function searchBrowserStorage() {
+            const resultsDiv = document.getElementById('storageResults');
+            let html = '<h4>🔍 Browser Storage Search Results:</h4>';
+            let found = false;
+            
+            // Search localStorage
+            html += '<h5>📦 localStorage:</h5>';
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                
+                if (key.includes(targetUUID) || value.includes(targetUUID)) {
+                    html += `<div class="storage-item success">
+                        <strong>✅ FOUND in localStorage!</strong><br>
+                        Key: ${key}<br>
+                        Value: ${value.substring(0, 200)}${value.length > 200 ? '...' : ''}
+                    </div>`;
+                    found = true;
+                } else {
+                    html += `<div class="storage-item">
+                        Key: ${key} (${value.length} chars)
+                    </div>`;
+                }
+            }
+            
+            // Search sessionStorage
+            html += '<h5>🗂️ sessionStorage:</h5>';
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                const value = sessionStorage.getItem(key);
+                
+                if (key.includes(targetUUID) || value.includes(targetUUID)) {
+                    html += `<div class="storage-item success">
+                        <strong>✅ FOUND in sessionStorage!</strong><br>
+                        Key: ${key}<br>
+                        Value: ${value.substring(0, 200)}${value.length > 200 ? '...' : ''}
+                    </div>`;
+                    found = true;
+                } else {
+                    html += `<div class="storage-item">
+                        Key: ${key} (${value.length} chars)
+                    </div>`;
+                }
+            }
+            
+            // Search cookies
+            html += '<h5>🍪 Cookies:</h5>';
+            const cookies = document.cookie.split(';');
+            cookies.forEach(cookie => {
+                if (cookie.includes(targetUUID)) {
+                    html += `<div class="storage-item success">
+                        <strong>✅ FOUND in cookies!</strong><br>
+                        Cookie: ${cookie.trim()}
+                    </div>`;
+                    found = true;
+                } else {
+                    html += `<div class="storage-item">
+                        Cookie: ${cookie.trim()}
+                    </div>`;
+                }
+            });
+            
+            if (!found) {
+                html += '<div class="warning result">❌ UUID not found in browser storage</div>';
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        async function searchDatabase() {
+            const resultsDiv = document.getElementById('databaseResults');
+            resultsDiv.innerHTML = '<div class="info result">🔄 Searching database...</div>';
+            
+            try {
+                // Search in different tables
+                const tables = ['users', 'bookings', 'inventory', 'vehicle_history', 'testimonials'];
+                let html = '<h4>🗄️ Database Search Results:</h4>';
+                let found = false;
+                
+                for (const table of tables) {
+                    try {
+                        const response = await fetch(`${API_BASE}/api/${table}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            
+                            html += `<h5>📋 Table: ${table} (${data.length} records)</h5>`;
+                            
+                            const matchingRecords = data.filter(record => 
+                                JSON.stringify(record).includes(targetUUID)
+                            );
+                            
+                            if (matchingRecords.length > 0) {
+                                html += `<div class="success result">
+                                    <strong>✅ FOUND ${matchingRecords.length} matching record(s)!</strong><br>
+                                    <pre>${JSON.stringify(matchingRecords, null, 2)}</pre>
+                                </div>`;
+                                found = true;
+                            } else {
+                                html += `<div class="storage-item">No matches in ${table}</div>`;
+                            }
+                        } else {
+                            html += `<div class="error result">❌ Failed to fetch ${table}: ${response.status}</div>`;
+                        }
+                    } catch (error) {
+                        html += `<div class="error result">❌ Error searching ${table}: ${error.message}</div>`;
+                    }
+                }
+                
+                if (!found) {
+                    html += '<div class="warning result">❌ UUID not found in any database table</div>';
+                }
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error result">❌ Database search failed: ${error.message}</div>`;
+            }
+        }
+        
+        function monitorNetworkRequests() {
+            const resultsDiv = document.getElementById('networkResults');
+            resultsDiv.innerHTML = `
+                <div class="info result">
+                    <h4>📡 Network Monitoring Active</h4>
+                    <p>Network monitoring is now active. Perform actions in the app and check if the UUID appears in any requests.</p>
+                    <p><strong>To manually check:</strong></p>
+                    <ol>
+                        <li>Open DevTools (F12)</li>
+                        <li>Go to Network tab</li>
+                        <li>Clear existing requests</li>
+                        <li>Perform actions in the app</li>
+                        <li>Search for: <code>${targetUUID}</code></li>
+                    </ol>
+                </div>
+            `;
+            
+            // Override fetch to monitor requests
+            const originalFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const response = await originalFetch.apply(this, args);
+                
+                // Check if UUID is in request or response
+                const url = args[0];
+                if (url.includes(targetUUID)) {
+                    resultsDiv.innerHTML += `
+                        <div class="success result">
+                            <strong>✅ FOUND in request URL!</strong><br>
+                            URL: ${url}
+                        </div>
+                    `;
+                }
+                
+                return response;
+            };
+        }
+        
+        function clearResults(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+        
+        // Auto-search on page load
+        window.addEventListener('load', function() {
+            searchBrowserStorage();
+        });
+    </script>
+</body>
+</html>
