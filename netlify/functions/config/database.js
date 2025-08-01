@@ -1,4 +1,11 @@
-const bcrypt = require('bcrypt');
+// Simple hash function for demo (not secure for production)
+function simpleHash(password) {
+  return Buffer.from(password).toString('base64');
+}
+
+function verifyPassword(password, hash) {
+  return simpleHash(password) === hash;
+}
 
 // In-memory database simulation
 let database = {
@@ -83,7 +90,7 @@ async function insertDefaultUsers() {
     ];
 
     for (const user of defaultUsers) {
-      const hashedPassword = await bcrypt.hash(user.password, 10);
+      const hashedPassword = simpleHash(user.password);
       database.users.push({
         ...user,
         password: hashedPassword

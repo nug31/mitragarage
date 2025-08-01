@@ -1,8 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const serverless = require('serverless-http');
-const bcrypt = require('bcrypt');
 const { initializeDatabase, getDatabase } = require('./config/database');
+
+// Simple hash function for demo (not secure for production)
+function simpleHash(password) {
+  return Buffer.from(password).toString('base64');
+}
+
+function verifyPassword(password, hash) {
+  return simpleHash(password) === hash;
+}
 
 const app = express();
 
@@ -44,7 +52,7 @@ app.post('/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const isValid = await bcrypt.compare(password, user.password);
+    const isValid = verifyPassword(password, user.password);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
