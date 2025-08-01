@@ -145,6 +145,7 @@ async function insertSampleData() {
         vehicle_model: 'Avanza',
         vehicle_year: 2020,
         license_plate: 'B 1234 ABC',
+        vehicle_kilometer: '45000',
         service_type: 'Service Rutin',
         booking_date: '2025-08-02',
         booking_time: '09:00',

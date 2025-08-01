@@ -101,6 +101,7 @@ export const DEMO_DATA = {
       vehicle_brand: 'Toyota',
       vehicle_model: 'Avanza',
       license_plate: 'B 1234 ABC',
+      vehicleKilometer: '45000',
       service_type: 'Service Rutin',
       booking_date: '2025-08-02',
       status: 'pending'
