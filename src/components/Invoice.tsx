@@ -80,7 +80,7 @@ SYARAT & KETENTUAN:
 • Untuk keluhan, hubungi customer service dalam 24 jam
 
 KONTAK INFORMASI:
-Alamat: Jl. Raya Garage No. 123, Jakarta
+Alamat: Kawasan Industri MM2100, Jl. Kalimantan No.1 Blok DD 1 17530 Kabupaten Bekasi Jawa Barat 
 Telepon: (021) 1234-5678
 Emergency: (021) 1234-5679
 WhatsApp: +62 812-3456-7890
@@ -148,7 +148,7 @@ Invoice ini dibuat secara otomatis oleh sistem dan sah tanpa tanda tangan.
             <div className="flex justify-center items-center space-x-4 mt-2 text-sm text-gray-500">
               <div className="flex items-center">
                 <MapPin className="h-4 w-4 mr-1" />
-                Jl. Raya Garage No. 123, Jakarta
+                Kawasan Industri MM2100, Jl. Kalimantan No.1 Blok DD 1, Bekasi
               </div>
               <div className="flex items-center">
                 <Phone className="h-4 w-4 mr-1" />
