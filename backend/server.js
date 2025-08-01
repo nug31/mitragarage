@@ -26,6 +26,7 @@ app.use(cors({
     process.env.FRONTEND_URL || 'http://localhost:5173',
     'http://localhost:5173',
     'http://localhost:5174',
+    'https://mitragarage-app.netlify.app',
     /\.netlify\.app$/,
     /\.railway\.app$/,
     'https://mitragarage-production.up.railway.app',
