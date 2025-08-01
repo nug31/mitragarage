@@ -15,9 +15,11 @@ import {
   Edit,
   Save,
   X,
-  XCircle
+  XCircle,
+  FileText
 } from 'lucide-react';
 import { bookingsAPI } from '../utils/mysqlDatabase';
+import Invoice from './Invoice';
 import LoadingSpinner from './LoadingSpinner';
 
 const ServiceBooking = () => {
@@ -27,6 +29,8 @@ const ServiceBooking = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingBooking, setEditingBooking] = useState<any>(null);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [invoiceBooking, setInvoiceBooking] = useState<any>(null);
   const [bookingData, setBookingData] = useState({
     customerName: '',
     phone: '',
@@ -141,6 +145,15 @@ const ServiceBooking = () => {
     try {
       await bookingsAPI.updateStatus(id, newStatus);
       await loadBookings();
+
+      // Show invoice when booking is completed
+      if (newStatus === 'Selesai') {
+        const completedBooking = bookings.find(booking => booking.id === id);
+        if (completedBooking) {
+          setInvoiceBooking(completedBooking);
+          setShowInvoice(true);
+        }
+      }
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Error updating status. Please try again.');
@@ -326,6 +339,18 @@ const ServiceBooking = () => {
                       <Edit className="h-3 w-3 mr-1" />
                       Edit
                     </button>
+                    {booking.status === 'Selesai' && (
+                      <button
+                        onClick={() => {
+                          setInvoiceBooking(booking);
+                          setShowInvoice(true);
+                        }}
+                        className="text-green-600 hover:text-green-800 text-xs flex items-center"
+                      >
+                        <FileText className="h-3 w-3 mr-1" />
+                        Invoice
+                      </button>
+                    )}
                   </div>
                   <div className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
                     {getStatusIcon(booking.status)}
@@ -512,6 +537,13 @@ const ServiceBooking = () => {
           </div>
         </div>
       )}
+
+      {/* Invoice Modal */}
+      <Invoice
+        isOpen={showInvoice}
+        onClose={() => setShowInvoice(false)}
+        bookingData={invoiceBooking}
+      />
     </div>
   );
 };

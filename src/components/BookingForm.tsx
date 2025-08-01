@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, User, Phone, Car, Wrench, Calendar, Clock, FileText, Gauge } from 'lucide-react';
+import Invoice from './Invoice';
 
 interface BookingFormProps {
   isOpen: boolean;
@@ -19,6 +20,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, onSubmit }) 
     preferredTime: 'Pilih Waktu',
     description: ''
   });
+
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [currentBooking, setCurrentBooking] = useState<any>(null);
 
   const vehicleTypes = [
     'Pilih Jenis Kendaraan',
@@ -128,10 +132,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, onSubmit }) 
     // Submit booking
     onSubmit(bookingData);
 
-    // Show success message
-    const kmInfo = formData.vehicleKilometer ? `\nKM: ${formData.vehicleKilometer}` : '';
-    alert(`✅ Booking berhasil dibuat!\n\nID: ${bookingData.id}\nNama: ${formData.customerName}\nKendaraan: ${formData.vehicleNumber}${kmInfo}\nLayanan: ${formData.serviceType}\nTanggal: ${formData.preferredDate}\nWaktu: ${formData.preferredTime}`);
-    
+    // Show invoice instead of alert
+    setCurrentBooking(bookingData);
+    setShowInvoice(true);
+
     // Reset form
     setFormData({
       customerName: '',
@@ -144,7 +148,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, onSubmit }) 
       preferredTime: 'Pilih Waktu',
       description: ''
     });
-    
+
     onClose();
   };
 
@@ -367,6 +371,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, onSubmit }) 
           </div>
         </form>
       </div>
+
+      {/* Invoice Modal */}
+      <Invoice
+        isOpen={showInvoice}
+        onClose={() => setShowInvoice(false)}
+        bookingData={currentBooking}
+      />
     </div>
   );
 };
