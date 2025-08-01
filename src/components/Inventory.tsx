@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { inventoryAPI } from '../utils/mysqlDatabase';
 import LoadingSpinner from './LoadingSpinner';
+import * as XLSX from 'xlsx';
 
 const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -117,35 +118,79 @@ const Inventory = () => {
   };
 
   // Export functionality
-  const handleExport = () => {
+  const handleExport = (format: 'csv' | 'excel' = 'excel') => {
     try {
-      // Create CSV content
       const headers = ['Nama Item', 'Kategori', 'Stok', 'Stok Minimum', 'Harga', 'Lokasi', 'Status'];
-      const csvContent = [
-        headers.join(','),
-        ...filteredInventory.map(item => [
-          `"${item.name}"`,
-          `"${item.category}"`,
-          item.stock,
-          item.min_stock || item.minStock,
-          item.price,
-          `"${item.location || ''}"`,
-          `"${item.stock <= (item.min_stock || item.minStock) ? 'Stok Rendah' : 'Normal'}"`
-        ].join(','))
-      ].join('\n');
+      const data = filteredInventory.map(item => [
+        item.name,
+        item.category,
+        item.stock,
+        item.min_stock || item.minStock,
+        item.price,
+        item.location || '',
+        item.stock <= (item.min_stock || item.minStock) ? 'Stok Rendah' : 'Normal'
+      ]);
 
-      // Create and download file
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `inventory_export_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (format === 'excel') {
+        // Create Excel file
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
 
-      alert('Data inventaris berhasil diekspor!');
+        // Set column widths
+        const colWidths = [
+          { wch: 25 }, // Nama Item
+          { wch: 15 }, // Kategori
+          { wch: 10 }, // Stok
+          { wch: 15 }, // Stok Minimum
+          { wch: 15 }, // Harga
+          { wch: 15 }, // Lokasi
+          { wch: 12 }  // Status
+        ];
+        ws['!cols'] = colWidths;
+
+        // Style header row
+        const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+          if (!ws[cellAddress]) continue;
+          ws[cellAddress].s = {
+            font: { bold: true },
+            fill: { fgColor: { rgb: "CCCCCC" } },
+            alignment: { horizontal: "center" }
+          };
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Inventaris');
+
+        // Add metadata
+        wb.Props = {
+          Title: 'Data Inventaris Mitra Garage',
+          Subject: 'Laporan Inventaris',
+          Author: 'Mitra Garage System',
+          CreatedDate: new Date()
+        };
+
+        XLSX.writeFile(wb, `inventory_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      } else {
+        // Create CSV content
+        const csvContent = [
+          headers.join(','),
+          ...data.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+
+        // Create and download CSV file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `inventory_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      alert(`Data inventaris berhasil diekspor ke format ${format.toUpperCase()}!`);
     } catch (error) {
       console.error('Error exporting data:', error);
       alert('Gagal mengekspor data. Silakan coba lagi.');
@@ -160,10 +205,14 @@ const Inventory = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+      const isCSV = file.type === 'text/csv' || file.name.endsWith('.csv');
+      const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                     file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+      if (isCSV || isExcel) {
         setImportFile(file);
       } else {
-        alert('Silakan pilih file CSV yang valid.');
+        alert('Silakan pilih file CSV atau Excel (.xlsx) yang valid.');
         e.target.value = '';
       }
     }
@@ -171,42 +220,91 @@ const Inventory = () => {
 
   const processImport = async () => {
     if (!importFile) {
-      alert('Silakan pilih file CSV terlebih dahulu.');
+      alert('Silakan pilih file CSV atau Excel terlebih dahulu.');
       return;
     }
 
     try {
-      const text = await importFile.text();
-      const lines = text.split('\n');
-      const headers = lines[0].split(',');
+      let importedItems: any[] = [];
+      const isExcel = importFile.name.endsWith('.xlsx') || importFile.name.endsWith('.xls');
 
-      // Validate headers
-      const expectedHeaders = ['Nama Item', 'Kategori', 'Stok', 'Stok Minimum', 'Harga', 'Lokasi'];
-      const isValidFormat = expectedHeaders.every(header =>
-        headers.some(h => h.replace(/"/g, '').trim() === header)
-      );
+      if (isExcel) {
+        // Process Excel file
+        const arrayBuffer = await importFile.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
-      if (!isValidFormat) {
-        alert('Format file CSV tidak valid. Pastikan header sesuai dengan format yang benar.');
-        return;
-      }
+        if (data.length < 2) {
+          alert('File Excel tidak memiliki data yang cukup.');
+          return;
+        }
 
-      const importedItems = [];
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line) {
-          const values = line.split(',').map(v => v.replace(/"/g, '').trim());
-          if (values.length >= 6) {
+        const headers = data[0];
+        const expectedHeaders = ['Nama Item', 'Kategori', 'Stok', 'Stok Minimum', 'Harga', 'Lokasi'];
+        const isValidFormat = expectedHeaders.every(header =>
+          headers.some((h: any) => String(h).trim() === header)
+        );
+
+        if (!isValidFormat) {
+          alert('Format file Excel tidak valid. Pastikan header sesuai dengan format yang benar.');
+          return;
+        }
+
+        for (let i = 1; i < data.length; i++) {
+          const row = data[i];
+          if (row && row.length >= 6) {
             importedItems.push({
-              name: values[0],
-              category: values[1],
-              stock: parseInt(values[2]) || 0,
-              minStock: parseInt(values[3]) || 0,
-              price: parseFloat(values[4]) || 0,
-              location: values[5] || ''
+              name: String(row[0] || '').trim(),
+              category: String(row[1] || '').trim(),
+              stock: parseInt(String(row[2])) || 0,
+              minStock: parseInt(String(row[3])) || 0,
+              price: parseFloat(String(row[4])) || 0,
+              location: String(row[5] || '').trim()
             });
           }
         }
+      } else {
+        // Process CSV file
+        const text = await importFile.text();
+        const lines = text.split('\n');
+        const headers = lines[0].split(',');
+
+        const expectedHeaders = ['Nama Item', 'Kategori', 'Stok', 'Stok Minimum', 'Harga', 'Lokasi'];
+        const isValidFormat = expectedHeaders.every(header =>
+          headers.some(h => h.replace(/"/g, '').trim() === header)
+        );
+
+        if (!isValidFormat) {
+          alert('Format file CSV tidak valid. Pastikan header sesuai dengan format yang benar.');
+          return;
+        }
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line) {
+            const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+            if (values.length >= 6) {
+              importedItems.push({
+                name: values[0],
+                category: values[1],
+                stock: parseInt(values[2]) || 0,
+                minStock: parseInt(values[3]) || 0,
+                price: parseFloat(values[4]) || 0,
+                location: values[5] || ''
+              });
+            }
+          }
+        }
+      }
+
+      // Filter out empty items
+      importedItems = importedItems.filter(item => item.name && item.category);
+
+      if (importedItems.length === 0) {
+        alert('Tidak ada data valid yang ditemukan dalam file.');
+        return;
       }
 
       // Import items one by one
@@ -230,35 +328,98 @@ const Inventory = () => {
       alert(`Import selesai!\nBerhasil: ${successCount} item\nGagal: ${errorCount} item`);
     } catch (error) {
       console.error('Error processing import:', error);
-      alert('Gagal memproses file import. Pastikan format file CSV benar.');
+      alert('Gagal memproses file import. Pastikan format file benar.');
     }
   };
 
-  // Download template CSV
-  const downloadTemplate = () => {
+  // Download template
+  const downloadTemplate = (format: 'csv' | 'excel' = 'excel') => {
     const headers = ['Nama Item', 'Kategori', 'Stok', 'Stok Minimum', 'Harga', 'Lokasi'];
     const sampleData = [
-      ['Oli Mesin SAE 10W-40', 'Pelumas', '50', '10', '75000', 'Rak A1'],
-      ['Kampas Rem Depan', 'Rem', '25', '5', '150000', 'Rak B2'],
-      ['Filter Udara', 'Filter', '30', '8', '45000', 'Rak C3'],
-      ['Busi NGK', 'Pengapian', '100', '20', '25000', 'Rak D4'],
-      ['Ban Tubeless 185/65R15', 'Ban', '12', '3', '850000', 'Gudang']
+      ['Oli Mesin SAE 10W-40', 'Pelumas', 50, 10, 75000, 'Rak A1'],
+      ['Kampas Rem Depan', 'Rem', 25, 5, 150000, 'Rak B2'],
+      ['Filter Udara', 'Filter', 30, 8, 45000, 'Rak C3'],
+      ['Busi NGK', 'Pengapian', 100, 20, 25000, 'Rak D4'],
+      ['Ban Tubeless 185/65R15', 'Ban', 12, 3, 850000, 'Gudang']
     ];
 
-    const csvContent = [
-      headers.join(','),
-      ...sampleData.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
+    if (format === 'excel') {
+      // Create Excel template
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'template_import_inventaris.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Set column widths
+      const colWidths = [
+        { wch: 25 }, // Nama Item
+        { wch: 15 }, // Kategori
+        { wch: 10 }, // Stok
+        { wch: 15 }, // Stok Minimum
+        { wch: 15 }, // Harga
+        { wch: 15 }  // Lokasi
+      ];
+      ws['!cols'] = colWidths;
+
+      // Style header row
+      const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (!ws[cellAddress]) continue;
+        ws[cellAddress].s = {
+          font: { bold: true },
+          fill: { fgColor: { rgb: "CCCCCC" } },
+          alignment: { horizontal: "center" }
+        };
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Template Inventaris');
+
+      // Add instructions sheet
+      const instructionsData = [
+        ['INSTRUKSI PENGGUNAAN TEMPLATE'],
+        [''],
+        ['1. Isi data inventaris pada sheet "Template Inventaris"'],
+        ['2. Jangan mengubah nama kolom (header)'],
+        ['3. Pastikan format data sesuai:'],
+        ['   - Nama Item: Teks'],
+        ['   - Kategori: Pilih dari: Pelumas, Rem, Filter, Pengapian, Ban'],
+        ['   - Stok: Angka (jumlah barang)'],
+        ['   - Stok Minimum: Angka (batas minimum stok)'],
+        ['   - Harga: Angka (harga dalam Rupiah)'],
+        ['   - Lokasi: Teks (lokasi penyimpanan)'],
+        [''],
+        ['4. Hapus baris contoh data sebelum import'],
+        ['5. Simpan file dan upload ke sistem'],
+        [''],
+        ['Contoh kategori yang tersedia:'],
+        ['- Pelumas (oli, grease, dll)'],
+        ['- Rem (kampas rem, minyak rem, dll)'],
+        ['- Filter (filter udara, oli, bensin)'],
+        ['- Pengapian (busi, koil, kabel busi)'],
+        ['- Ban (ban dalam, ban luar, tubeless)']
+      ];
+
+      const instructionsWs = XLSX.utils.aoa_to_sheet(instructionsData);
+      instructionsWs['!cols'] = [{ wch: 50 }];
+      XLSX.utils.book_append_sheet(wb, instructionsWs, 'Instruksi');
+
+      XLSX.writeFile(wb, 'template_import_inventaris.xlsx');
+    } else {
+      // Create CSV template
+      const csvContent = [
+        headers.join(','),
+        ...sampleData.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'template_import_inventaris.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const filteredInventory = inventory.filter(item => {
@@ -321,13 +482,29 @@ const Inventory = () => {
               <Upload className="h-4 w-4 mr-2" />
               Import
             </button>
-            <button
-              onClick={handleExport}
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </button>
+            <div className="relative group">
+              <button
+                onClick={() => handleExport('excel')}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Excel
+              </button>
+              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                <button
+                  onClick={() => handleExport('excel')}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"
+                >
+                  📊 Export Excel (.xlsx)
+                </button>
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg"
+                >
+                  📄 Export CSV (.csv)
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -584,15 +761,24 @@ const Inventory = () => {
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-3">
                   <p className="text-sm text-gray-600">
-                    Upload file CSV dengan format berikut:
+                    Upload file Excel (.xlsx) atau CSV dengan format berikut:
                   </p>
-                  <button
-                    onClick={downloadTemplate}
-                    className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors flex items-center"
-                  >
-                    <Download className="h-3 w-3 mr-1" />
-                    Download Template
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => downloadTemplate('excel')}
+                      className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition-colors flex items-center"
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      📊 Template Excel
+                    </button>
+                    <button
+                      onClick={() => downloadTemplate('csv')}
+                      className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors flex items-center"
+                    >
+                      <Download className="h-3 w-3 mr-1" />
+                      📄 Template CSV
+                    </button>
+                  </div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg text-xs font-mono">
                   Nama Item,Kategori,Stok,Stok Minimum,Harga,Lokasi<br/>
@@ -603,16 +789,19 @@ const Inventory = () => {
 
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pilih File CSV
+                  Pilih File Excel (.xlsx) atau CSV (.csv)
                 </label>
                 <input
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.xlsx,.xls"
                   onChange={handleFileChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 {importFile && (
-                  <p className="text-sm text-green-600 mt-2">
+                  <p className="text-sm text-green-600 mt-2 flex items-center">
+                    <span className="mr-2">
+                      {importFile.name.endsWith('.xlsx') || importFile.name.endsWith('.xls') ? '📊' : '📄'}
+                    </span>
                     File terpilih: {importFile.name}
                   </p>
                 )}
@@ -625,7 +814,8 @@ const Inventory = () => {
                     <p className="font-medium">Perhatian:</p>
                     <ul className="mt-1 list-disc list-inside">
                       <li>Data yang diimport akan ditambahkan ke inventaris yang ada</li>
-                      <li>Pastikan format CSV sesuai dengan contoh di atas</li>
+                      <li>Pastikan format Excel/CSV sesuai dengan template</li>
+                      <li>Gunakan template yang disediakan untuk hasil terbaik</li>
                       <li>Item yang gagal diimport akan dilewati</li>
                     </ul>
                   </div>
