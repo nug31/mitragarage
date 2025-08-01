@@ -1,207 +1,186 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const bcrypt = require('bcrypt');
 
-// Database file path
-const dbPath = path.join('/tmp', 'mitragarage.db');
+// In-memory database simulation
+let database = {
+  users: [],
+  inventory: [],
+  bookings: [],
+  vehicle_history: [],
+  testimonials: []
+};
 
-let db = null;
+let dbInitialized = false;
 
 // Initialize database connection
-function initializeDatabase() {
-  return new Promise((resolve, reject) => {
-    if (db) {
-      return resolve(db);
-    }
+async function initializeDatabase() {
+  if (dbInitialized) {
+    return database;
+  }
 
-    db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        console.error('Error opening database:', err);
-        return reject(err);
-      }
-      console.log('Connected to SQLite database');
-      
-      // Initialize tables
-      initializeTables()
-        .then(() => resolve(db))
-        .catch(reject);
-    });
-  });
+  try {
+    console.log('Initializing in-memory database...');
+    await initializeTables();
+    dbInitialized = true;
+    console.log('In-memory database initialized successfully');
+    return database;
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
+  }
 }
 
 // Initialize database tables
-function initializeTables() {
-  return new Promise((resolve, reject) => {
-    const tables = [
-      // Users table
-      `CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        role ENUM('admin', 'customer') DEFAULT 'customer',
-        email VARCHAR(100),
-        phone VARCHAR(20),
-        address TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`,
-      
-      // Inventory table
-      `CREATE TABLE IF NOT EXISTS inventory (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name VARCHAR(100) NOT NULL,
-        category VARCHAR(50),
-        quantity INTEGER DEFAULT 0,
-        price DECIMAL(10,2),
-        supplier VARCHAR(100),
-        description TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`,
-      
-      // Bookings table
-      `CREATE TABLE IF NOT EXISTS bookings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        customer_name VARCHAR(100) NOT NULL,
-        customer_phone VARCHAR(20),
-        customer_email VARCHAR(100),
-        vehicle_type VARCHAR(50),
-        vehicle_brand VARCHAR(50),
-        vehicle_model VARCHAR(50),
-        vehicle_year INTEGER,
-        license_plate VARCHAR(20),
-        service_type VARCHAR(100),
-        booking_date DATE,
-        booking_time TIME,
-        status ENUM('pending', 'confirmed', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
-        notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`,
-      
-      // Vehicle history table
-      `CREATE TABLE IF NOT EXISTS vehicle_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        license_plate VARCHAR(20) NOT NULL,
-        customer_name VARCHAR(100),
-        service_date DATE,
-        service_type VARCHAR(100),
-        description TEXT,
-        cost DECIMAL(10,2),
-        mechanic VARCHAR(100),
-        status ENUM('completed', 'in_progress', 'cancelled') DEFAULT 'completed',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`,
-      
-      // Testimonials table
-      `CREATE TABLE IF NOT EXISTS testimonials (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        customer_name VARCHAR(100) NOT NULL,
-        rating INTEGER CHECK(rating >= 1 AND rating <= 5),
-        comment TEXT,
-        service_type VARCHAR(100),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )`
-    ];
+async function initializeTables() {
+  try {
+    console.log('Initializing in-memory tables...');
 
-    let completed = 0;
-    const total = tables.length;
+    // Clear existing data
+    database.users = [];
+    database.inventory = [];
+    database.bookings = [];
+    database.vehicle_history = [];
+    database.testimonials = [];
 
-    tables.forEach((sql, index) => {
-      db.run(sql, (err) => {
-        if (err) {
-          console.error(`Error creating table ${index}:`, err);
-          return reject(err);
-        }
-        
-        completed++;
-        if (completed === total) {
-          console.log('All tables initialized successfully');
-          
-          // Insert default users
-          insertDefaultUsers()
-            .then(() => resolve())
-            .catch(reject);
-        }
-      });
-    });
-  });
+    // Insert default users
+    await insertDefaultUsers();
+
+    // Insert sample data
+    await insertSampleData();
+
+    console.log('All tables initialized successfully');
+  } catch (error) {
+    console.error('Error initializing tables:', error);
+    throw error;
+  }
 }
 
 // Insert default users
-function insertDefaultUsers() {
-  return new Promise((resolve, reject) => {
-    const bcrypt = require('bcrypt');
-    
+async function insertDefaultUsers() {
+  try {
     const defaultUsers = [
       {
+        id: 1,
         username: 'admin',
         password: 'admin123',
         role: 'admin',
-        email: 'admin@mitragarage.com'
+        email: 'admin@mitragarage.com',
+        phone: '081234567890',
+        address: 'Jl. Admin No. 1',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       {
+        id: 2,
         username: 'customer_new',
         password: 'customer123',
         role: 'customer',
-        email: 'customer@example.com'
+        email: 'customer@example.com',
+        phone: '081234567891',
+        address: 'Jl. Customer No. 2',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     ];
 
-    let completed = 0;
-    const total = defaultUsers.length;
+    for (const user of defaultUsers) {
+      const hashedPassword = await bcrypt.hash(user.password, 10);
+      database.users.push({
+        ...user,
+        password: hashedPassword
+      });
+    }
 
-    defaultUsers.forEach(async (user) => {
-      try {
-        const hashedPassword = await bcrypt.hash(user.password, 10);
-        
-        db.run(
-          'INSERT OR IGNORE INTO users (username, password, role, email) VALUES (?, ?, ?, ?)',
-          [user.username, hashedPassword, user.role, user.email],
-          (err) => {
-            if (err) {
-              console.error('Error inserting user:', err);
-            }
-            
-            completed++;
-            if (completed === total) {
-              console.log('Default users inserted successfully');
-              resolve();
-            }
-          }
-        );
-      } catch (error) {
-        console.error('Error hashing password:', error);
-        completed++;
-        if (completed === total) {
-          resolve();
-        }
+    console.log('Default users inserted successfully');
+  } catch (error) {
+    console.error('Error inserting default users:', error);
+    throw error;
+  }
+}
+
+// Insert sample data
+async function insertSampleData() {
+  try {
+    // Sample inventory
+    database.inventory = [
+      {
+        id: 1,
+        name: 'Oli Mesin 10W-40',
+        category: 'Oli',
+        quantity: 50,
+        price: 75000,
+        supplier: 'PT Oli Indonesia',
+        description: 'Oli mesin berkualitas tinggi',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 2,
+        name: 'Ban Michelin 185/65R15',
+        category: 'Ban',
+        quantity: 20,
+        price: 850000,
+        supplier: 'PT Ban Nusantara',
+        description: 'Ban berkualitas untuk mobil sedan',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
-    });
-  });
+    ];
+
+    // Sample bookings
+    database.bookings = [
+      {
+        id: 1,
+        customer_name: 'John Doe',
+        customer_phone: '081234567892',
+        customer_email: 'john@example.com',
+        vehicle_type: 'Mobil',
+        vehicle_brand: 'Toyota',
+        vehicle_model: 'Avanza',
+        vehicle_year: 2020,
+        license_plate: 'B 1234 ABC',
+        service_type: 'Service Rutin',
+        booking_date: '2025-08-02',
+        booking_time: '09:00',
+        status: 'pending',
+        notes: 'Service rutin 10.000 km',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
+
+    // Sample testimonials
+    database.testimonials = [
+      {
+        id: 1,
+        customer_name: 'Jane Smith',
+        rating: 5,
+        comment: 'Pelayanan sangat memuaskan, mekanik profesional!',
+        service_type: 'Ganti Oli',
+        created_at: new Date().toISOString()
+      }
+    ];
+
+    console.log('Sample data inserted successfully');
+  } catch (error) {
+    console.error('Error inserting sample data:', error);
+    throw error;
+  }
 }
 
 // Get database instance
 function getDatabase() {
-  if (!db) {
+  if (!dbInitialized) {
     throw new Error('Database not initialized. Call initializeDatabase() first.');
   }
-  return db;
+  return database;
 }
 
 // Test database connection
-function testConnection() {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      return reject(new Error('Database not initialized'));
-    }
-    
-    db.get('SELECT 1 as test', (err, row) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve(row);
-    });
-  });
+async function testConnection() {
+  if (!dbInitialized) {
+    throw new Error('Database not initialized');
+  }
+  return { test: 1 };
 }
 
 module.exports = {
