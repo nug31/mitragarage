@@ -56,8 +56,10 @@
    - Base directory: `mitragarage-fixed` (if needed)
 
 4. Set environment variables in Netlify:
-   - `VITE_API_URL`: https://your-railway-backend-url.railway.app
-   - `VITE_API_BASE_URL`: https://your-railway-backend-url.railway.app/api
+   - `VITE_API_URL`: https://mitragarage-production.up.railway.app
+   - `VITE_API_BASE_URL`: https://mitragarage-production.up.railway.app/api
+   - `VITE_APP_NAME`: Mitra Garage
+   - `VITE_APP_VERSION`: 1.0.0
    - `NODE_ENV`: production
 
 5. Deploy and get your Netlify URL
@@ -93,8 +95,10 @@ app.use(cors({
 - `FRONTEND_URL`: https://your-netlify-app.netlify.app
 
 ### Netlify (Frontend)
-- `VITE_API_URL`: https://your-railway-backend-url.railway.app
-- `VITE_API_BASE_URL`: https://your-railway-backend-url.railway.app/api
+- `VITE_API_URL`: https://mitragarage-production.up.railway.app
+- `VITE_API_BASE_URL`: https://mitragarage-production.up.railway.app/api
+- `VITE_APP_NAME`: Mitra Garage
+- `VITE_APP_VERSION`: 1.0.0
 - `NODE_ENV`: production
 
 ## Troubleshooting

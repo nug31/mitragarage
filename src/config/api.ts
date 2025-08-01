@@ -13,8 +13,8 @@ export const API_CONFIG = {
   
   // Production (Railway backend)
   production: {
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001',
-    apiURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'
+    baseURL: import.meta.env.VITE_API_URL || 'https://mitragarage-production.up.railway.app',
+    apiURL: import.meta.env.VITE_API_BASE_URL || 'https://mitragarage-production.up.railway.app/api'
   }
 };
 

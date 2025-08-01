@@ -28,6 +28,7 @@ app.use(cors({
     'http://localhost:5174',
     /\.netlify\.app$/,
     /\.railway\.app$/,
+    'https://mitragarage-production.up.railway.app',
     'file://',
     null // untuk file lokal
   ],
