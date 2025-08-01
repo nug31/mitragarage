@@ -1,15 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const serverless = require('serverless-http');
-const { initializeDatabase } = require('./config/database');
-
-// Import routes
-const inventoryRoutes = require('../../backend/routes/inventory');
-const bookingsRoutes = require('../../backend/routes/bookings');
-const vehiclesRoutes = require('../../backend/routes/vehicles');
-const vehicleHistoryRoutes = require('../../backend/routes/vehicle-history');
-const testimonialsRoutes = require('../../backend/routes/testimonials');
-const authRoutes = require('../../backend/routes/auth');
+const bcrypt = require('bcrypt');
+const { initializeDatabase, getDatabase } = require('./config/database');
 
 const app = express();
 
@@ -40,13 +33,155 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/auth', authRoutes);
-app.use('/inventory', inventoryRoutes);
-app.use('/bookings', bookingsRoutes);
-app.use('/vehicles', vehiclesRoutes);
-app.use('/vehicle-history', vehicleHistoryRoutes);
-app.use('/testimonials', testimonialsRoutes);
+// Auth Routes
+app.post('/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const db = getDatabase();
+
+    const user = db.users.find(u => u.username === username);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({
+      message: 'Login successful',
+      user: userWithoutPassword,
+      token: 'demo-token-' + user.id
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/auth/users', (req, res) => {
+  try {
+    const db = getDatabase();
+    const users = db.users.map(({ password, ...user }) => user);
+    res.json(users);
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Inventory Routes
+app.get('/inventory', (req, res) => {
+  try {
+    const db = getDatabase();
+    res.json(db.inventory);
+  } catch (error) {
+    console.error('Get inventory error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/inventory', (req, res) => {
+  try {
+    const db = getDatabase();
+    const newItem = {
+      id: db.inventory.length + 1,
+      ...req.body,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    db.inventory.push(newItem);
+    res.status(201).json(newItem);
+  } catch (error) {
+    console.error('Create inventory error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Bookings Routes
+app.get('/bookings', (req, res) => {
+  try {
+    const db = getDatabase();
+    res.json(db.bookings);
+  } catch (error) {
+    console.error('Get bookings error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/bookings', (req, res) => {
+  try {
+    const db = getDatabase();
+    const newBooking = {
+      id: db.bookings.length + 1,
+      ...req.body,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    db.bookings.push(newBooking);
+    res.status(201).json(newBooking);
+  } catch (error) {
+    console.error('Create booking error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Testimonials Routes
+app.get('/testimonials', (req, res) => {
+  try {
+    const db = getDatabase();
+    res.json(db.testimonials);
+  } catch (error) {
+    console.error('Get testimonials error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/testimonials', (req, res) => {
+  try {
+    const db = getDatabase();
+    const newTestimonial = {
+      id: db.testimonials.length + 1,
+      ...req.body,
+      created_at: new Date().toISOString()
+    };
+    db.testimonials.push(newTestimonial);
+    res.status(201).json(newTestimonial);
+  } catch (error) {
+    console.error('Create testimonial error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Vehicle History Routes
+app.get('/vehicle-history', (req, res) => {
+  try {
+    const db = getDatabase();
+    res.json(db.vehicle_history);
+  } catch (error) {
+    console.error('Get vehicle history error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/vehicle-history', (req, res) => {
+  try {
+    const db = getDatabase();
+    const newHistory = {
+      id: db.vehicle_history.length + 1,
+      ...req.body,
+      created_at: new Date().toISOString()
+    };
+    db.vehicle_history.push(newHistory);
+    res.status(201).json(newHistory);
+  } catch (error) {
+    console.error('Create vehicle history error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -59,7 +194,6 @@ app.get('/', (req, res) => {
       auth: '/auth',
       inventory: '/inventory',
       bookings: '/bookings',
-      vehicles: '/vehicles',
       vehicleHistory: '/vehicle-history',
       testimonials: '/testimonials'
     }
